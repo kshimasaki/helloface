@@ -5,6 +5,7 @@
 #include <future>
 #include <cstdint>
 #include <csignal>
+#include <string>
 #include <opencv2/opencv.hpp>
 
 #include "executor.h"

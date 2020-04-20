@@ -1,0 +1,9 @@
+numFrames     = 0
+preProcType   = 4
+netBinFile    = "../tidl_net_jdetNet_ssd_512x512.bin"
+paramsBinFile = "../tidl_param_jdetNet_ssd_512x512.bin"
+inWidth       = 512
+inHeight      = 512
+inNumChannels = 3
+
+enableTrace = true

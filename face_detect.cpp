@@ -39,16 +39,17 @@ void FPSQueue<T>::clear() {
     }
 }
 
-Executor* createExecutor(DeviceType dType, uint32_t num, const Configuration& c,
-                         int layerGroupId) {
+Executor* createExecutor(DeviceType dType, int num,
+                         const Configuration& config, int layerGroupId) {
+
     if (num == 0) { return nullptr; }
 
     DeviceIds dIds;
-    for (uint32_t i = 0; i < num; ++i) {
+    for (int i = 0; i < num; ++i) {
         dIds.insert(static_cast<DeviceId>(i));
     }
 
-    return new Executor(dType, dIds, c);
+    return new Executor(dType, dIds, config, layerGroupId);
 }
 
 void collectExecutionObjects(const Executor* e, vector<ExecutionObject*>& eos) {
@@ -204,8 +205,17 @@ int main(int argc, char** argv) {
 
     uint32_t numEves = Executor::GetNumDevices(DeviceType::EVE);
     uint32_t numDsps = Executor::GetNumDevices(DeviceType::DSP);
+    std::cout << "Found " << numEves << " EVEs and " << numDsps << " DSPs.";
+    std::cout << std::endl;
 
     Configuration config;
+    std::string configFname = "/home/debian/helloface/face_detect_config.txt";
+    bool status = config.ReadFromFile(configFname);
+    if (!status) {
+        std::cerr << "Error reading config file: " << configFname << "\n";
+        return false;
+    }
+
     cv::VideoCapture cap;
     initializeCaptureDevice(cap);
 
@@ -213,8 +223,13 @@ int main(int argc, char** argv) {
     cv::VideoWriter writer;
     initializeWriter(writer, outFilename);
 
-    bool status = true;
     try {
+        cout << "Status variable is " << status << endl;
+        cout << "Doing unique_ptr createExecutor calls"
+             << " with the following vars\n"
+             << "numEves: " << numEves << "\n"
+             << "numDsps: " << numDsps << "\n";
+        /*
         unique_ptr<Executor> eveExecutor(createExecutor(DeviceType::EVE,
                                                         numEves,
                                                         config,
@@ -223,7 +238,14 @@ int main(int argc, char** argv) {
                                                         numDsps,
                                                         config,
                                                         DSP_LAYER_GROUP));
+        */
+        Executor* eveExecutor = createExecutor(DeviceType::EVE, (int) numEves,
+                                               config, EVE_LAYER_GROUP);
 
+        Executor* dspExecutor = createExecutor(DeviceType::DSP, (int) numDsps,
+                                               config, DSP_LAYER_GROUP);
+
+        cout << "Finished unique_ptr executor creation" << endl;
         // Make two EOPs for each DSP-EVE group for double buffering
         std::vector<EOP *> eops;
         const uint32_t pipelineDepth = 2;
@@ -231,8 +253,7 @@ int main(int argc, char** argv) {
         for (uint32_t i = 0; i < numPipes; ++i) {
             for (uint32_t j = 0; j < pipelineDepth; ++j) {
                 eops.push_back(new EOP( {(*eveExecutor)[i % numEves],
-                                          (*dspExecutor)[i % numDsps]}
-                        ));
+                                          (*dspExecutor)[i % numDsps]}));
             }
         }
 
@@ -259,6 +280,8 @@ int main(int argc, char** argv) {
 
         freeEOPMemory(eops);
         for (auto eop : eops) { delete eop; }
+        delete eveExecutor;
+        delete dspExecutor;
 
     } catch (tidl::Exception &e) {
         std::cerr << e.what() << std::endl;

@@ -12,6 +12,7 @@ set( TI_OCL_INCLUDE_DIR "/usr/share/ti/opencl" )
 set( TIDL_API_INCLUDE_DIR "/usr/share/ti/tidl/tidl_api/inc" )
 set( GCC_COVERAGE_LINK_FLAGS "-lTIOpenCL -locl_util" )
 set( CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS} )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -ggdb" )
 
 #add_library( tidl SHARED IMPORTED )
 #set_property( TARGET tidl PROPERTY IMPORTED_LOCATION "/usr/share/ti/tidl/tidl_api/tidl.so" )
